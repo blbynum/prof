@@ -110,9 +110,33 @@ function edit_profile {
 
 
 function delete_profile {
-    echo "Delete profile function called with profile name: $1"
-    # Implement profile deletion logic here.
+    if [ -z "$1" ]; then
+        echo "Error: No profile name provided."
+        echo "Usage: prof delete <profile_name>"
+        return 1
+    fi
+
+    local profile_name=$1
+
+    # Check if the profile exists
+    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+        # Prompt for confirmation
+        read -p "Are you sure you want to delete the profile '$profile_name'? This action cannot be undone. (y/n): " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            # Delete the profile file
+            rm ~/.bash_profiles/$profile_name
+            # Remove the profile from the metadata file
+            sed -i "/$profile_name/d" ~/.bash_profiles/.profile_metadata
+            echo "Profile '$profile_name' deleted."
+        else
+            echo "Deletion canceled."
+        fi
+    else
+        echo "Error: Profile $profile_name does not exist."
+        return 1
+    fi
 }
+
 
 function list_profiles {
     echo "List profiles function called"
