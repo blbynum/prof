@@ -241,17 +241,36 @@ function install_prof {
         echo "The code to load profiles is already present in '$target_file'."
     else
         # Add the code to load profiles to the target file
-        echo "" >> "$target_file"
-        echo "# Load all profiles in the ~/.bash_profiles directory" >> "$target_file"
-        echo 'for profile in ~/.bash_profiles/*; do' >> "$target_file"
-        echo '    if [ -f "$profile" ]; then' >> "$target_file"
-        echo '        source "$profile"' >> "$target_file"
-        echo '    fi' >> "$target_file"
-        echo 'done' >> "$target_file"
-        echo "Profiles will be loaded from '~/.bash_profiles' when the shell starts."
+        cat << EOF >> "$target_file"
+
+# Load all profiles in the ~/.bash_profiles directory
+for profile in ~/.bash_profiles/*; do
+    if [ -f "\$profile" ]; then
+        source "\$profile"
+    fi
+done
+
+EOF
+
+        # Display instructions for adding prof to PATH
+        cat << EOF
+
+To use the 'prof' command, you have two options:
+
+Option 1: Add the location of the 'prof' executable to your PATH manually.
+You can do this by adding the following line to your target file (e.g., ~/.bash_profile):
+export PATH=\$PATH:/path/to/prof
+Make sure to replace '/path/to/prof' with the actual path where the 'prof' executable is located.
+
+Option 2: Copy the 'prof' executable to a directory that is already in your PATH.
+For example, you can copy 'prof' to /usr/local/bin, which is commonly in the default PATH on many systems.
+To do this, run the following command:
+cp prof /usr/local/bin
+After copying, you can use 'prof' from any location.
+
+EOF
     fi
 }
-
 
 function help {
     cat <<EOF
