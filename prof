@@ -87,9 +87,27 @@ function create_profile {
 
 
 function edit_profile {
-    echo "Edit profile function called with profile name: $1"
-    # Implement profile editing logic here.
+    if [ -z "$1" ]; then
+        echo "Error: No profile name provided."
+        echo "Usage: prof edit <profile_name>"
+        return 1
+    fi
+
+    local profile_name=$1
+
+    # Determine the user's preferred editor
+    local editor=${EDITOR:-vi}  # Default to vi if no editor is set
+
+    # Check if the profile exists
+    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+        # Open the profile in the editor
+        $editor ~/.bash_profiles/$profile_name
+    else
+        echo "Error: Profile $profile_name does not exist."
+        return 1
+    fi
 }
+
 
 function delete_profile {
     echo "Delete profile function called with profile name: $1"
