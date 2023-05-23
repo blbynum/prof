@@ -1,6 +1,51 @@
 #!/usr/bin/env bash
 
-#!/usr/bin/env bash
+################################################################################
+# prof - CLI tool for managing bash profiles
+#
+# Purpose:
+#   prof is a command-line tool designed to organize and manage bash profiles,
+#   providing users with a convenient way to create, edit, delete, list, export,
+#   and import profiles. It helps users organize their .bash_profile contents by
+#   creating separate profiles with customizable settings, aliases, functions,
+#   and more. The tool offers features such as dependency management by load
+#   order prioritization for seamless profile loading.
+#
+# Author:
+#   Ben Bynum
+#
+# Version:
+#   1.0.0
+#   05/23/2023
+#
+# Repository:
+#   https://github.com/blbynum/prof
+#
+# License:
+#   MIT License
+#
+#   Copyright (c) 2023 Ben Bynum
+#
+#   Permission is hereby granted, free of charge, to any person obtaining a copy
+#   of this software and associated documentation files (the "Software"), to deal
+#   in the Software without restriction, including without limitation the rights
+#   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#   copies of the Software, and to permit persons to whom the Software is
+#   furnished to do so, subject to the following conditions:
+#
+#   The above copyright notice and this permission notice shall be included in all
+#   copies or substantial portions of the Software.
+#
+#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#   SOFTWARE.
+#
+################################################################################
+
 
 # Global variable for profile template
 profile_template=$(cat << EOF
