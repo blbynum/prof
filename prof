@@ -1,37 +1,54 @@
 #!/usr/bin/env bash
 
-function main {
-    case "$1" in
-        create)
-            create_profile "$2" "$3"
-            ;;
-        edit)
-            edit_profile "$2"
-            ;;
-        delete)
-            delete_profile "$2"
-            ;;
-        list)
-            list_profiles
-            ;;
-        export)
-            export_profile "$2" "$3"
-            ;;
-        import)
-            import_profile "$2" "$3"
-            ;;
-        install)
-            install_prof "$2"
-            ;;
-        help)
-            display_help
-            ;;
-        *)
-            echo "Invalid command: $1"
-            display_help
-            ;;
-    esac
-}
+#!/usr/bin/env bash
+
+# Global variable for profile template
+profile_template=$(cat << EOF
+#!/usr/bin/env bash
+
+# Profile: {profile_name}
+# Description: Brief description of the profile
+
+# ===============================================
+# Environment variables
+# ===============================================
+# export VARNAME=value
+
+# ===============================================
+# Path modifications
+# ===============================================
+# export PATH=\$PATH:/new/path
+
+# ===============================================
+# Functions
+# ===============================================
+# functionname() {
+#    command
+# }
+
+# ===============================================
+# Aliases
+# ===============================================
+# alias aliasname='command'
+
+# ===============================================
+# Prompt modifications
+# ===============================================
+# PS1='Your custom prompt here'
+
+# ===============================================
+# Profile specific settings/commands
+# ===============================================
+# Add any profile-specific settings or commands here
+
+# ===============================================
+# Other
+# ===============================================
+# Add anything else here
+
+# End of profile: {profile_name}
+EOF
+)
 
 function create_profile {
     if [ -z "$1" ]; then
@@ -80,12 +97,13 @@ function create_profile {
     # Add the profile to the metadata file
     echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
 
-    # Copy the template to the new profile file
-    cp profile_template.sh ~/.bash_profiles/$profile_name
+    # Create the profile file with the template content
+    echo "${profile_template//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
 
     # Open the new profile in the editor
     $editor ~/.bash_profiles/$profile_name
 }
+
 
 function edit_profile {
     if [ -z "$1" ]; then
@@ -126,16 +144,17 @@ function delete_profile {
             # Delete the profile file
             rm ~/.bash_profiles/$profile_name
             # Remove the profile from the metadata file
-            sed -i "/$profile_name/d" ~/.bash_profiles/.profile_metadata
+            sed -i '' "/$profile_name/d" ~/.bash_profiles/.profile_metadata
             echo "Profile '$profile_name' deleted."
         else
             echo "Deletion canceled."
         fi
     else
-        echo "Error: Profile $profile_name does not exist."
+        echo "Error: Profile '$profile_name' does not exist."
         return 1
     fi
 }
+
 
 function list_profiles {
     # Check if the metadata file exists
@@ -214,6 +233,9 @@ function import_profile {
 
     local profile_name=$(basename "$profile_file")
 
+    # Format the load order with leading zeros
+    printf -v formatted_load_order "%02d" "$load_order"
+
     # Check if the profile already exists
     if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
         echo "Profile '$profile_name' already exists. Skipping import."
@@ -221,10 +243,11 @@ function import_profile {
         # Copy the profile file to the ~/.bash_profiles directory
         cp "$profile_file" ~/.bash_profiles/
         # Add the profile to the metadata file with the provided load order
-        echo "$load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
-        echo "Profile '$profile_name' imported with load order $load_order."
+        echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
+        echo "Profile '$profile_name' imported with load order $formatted_load_order."
     fi
 }
+
 
 function install_prof {
     local target_file=${1:-~/.bash_profile}
@@ -254,6 +277,8 @@ EOF
 
         # Display instructions for adding prof to PATH
         cat << EOF
+
+A loop has been added to $target_file to load all profiles in the ~/.bash_profiles directory.
 
 To use the 'prof' command, you have two options:
 
@@ -294,6 +319,39 @@ Note: The 'install' command installs the line to load profiles in the target fil
       such as ~/.bash_profile. You can specify a different file by providing
       an optional argument, e.g., prof install .zshrc.
 EOF
+}
+
+function main {
+    case "$1" in
+        create)
+            create_profile "$2" "$3"
+            ;;
+        edit)
+            edit_profile "$2"
+            ;;
+        delete)
+            delete_profile "$2"
+            ;;
+        list)
+            list_profiles
+            ;;
+        export)
+            export_profile "$2" "$3"
+            ;;
+        import)
+            import_profile "$2" "$3"
+            ;;
+        install)
+            install_prof "$2"
+            ;;
+        help)
+            display_help
+            ;;
+        *)
+            echo "Invalid command: $1"
+            display_help
+            ;;
+    esac
 }
 
 # Entry point of the script
