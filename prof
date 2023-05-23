@@ -18,7 +18,7 @@ function main {
             export_profile "$2" "$3"
             ;;
         import)
-            import_profile "$2"
+            import_profile "$2" "$3"
             ;;
         help)
             display_help
@@ -184,9 +184,45 @@ function export_profile {
 }
 
 function import_profile {
-    echo "Import profile function called with source: $1"
-    # Implement profile import logic here.
+    local profile_file=$1
+    local load_order=$2
+
+    if [ -z "$profile_file" ]; then
+        echo "Error: No profile file provided."
+        echo "Usage: prof import <profile_file> <load_order>"
+        return 1
+    fi
+
+    if [ -z "$load_order" ]; then
+        echo "Error: No load order provided."
+        echo "Usage: prof import <profile_file> <load_order>"
+        return 1
+    fi
+
+    if ! [[ "$load_order" =~ ^[0-9]+$ ]]; then
+        echo "Error: Load order must be a positive integer."
+        return 1
+    fi
+
+    if [ ! -f "$profile_file" ]; then
+        echo "Error: Profile file '$profile_file' does not exist."
+        return 1
+    fi
+
+    local profile_name=$(basename "$profile_file")
+
+    # Check if the profile already exists
+    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+        echo "Profile '$profile_name' already exists. Skipping import."
+    else
+        # Copy the profile file to the ~/.bash_profiles directory
+        cp "$profile_file" ~/.bash_profiles/
+        # Add the profile to the metadata file with the provided load order
+        echo "$load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
+        echo "Profile '$profile_name' imported with load order $load_order."
+    fi
 }
+
 
 function display_help {
     echo "Display help function called"
