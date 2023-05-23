@@ -272,7 +272,7 @@ EOF
     fi
 }
 
-function help {
+function display_help {
     cat <<EOF
 prof - CLI tool for managing bash profiles
 
