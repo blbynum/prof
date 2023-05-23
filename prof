@@ -20,6 +20,9 @@ function main {
         import)
             import_profile "$2" "$3"
             ;;
+        install)
+            install_prof "$2"
+            ;;
         help)
             display_help
             ;;
@@ -223,6 +226,25 @@ function import_profile {
     fi
 }
 
+function install_prof {
+    local target_file=${1:-~/.bash_profile}
+
+    # Check if the target file exists
+    if [ ! -f "$target_file" ]; then
+        echo "Error: Target file '$target_file' does not exist."
+        echo "You can specify a different file by providing an argument, e.g., prof install .zshrc"
+        return 1
+    fi
+
+    # Check if the line already exists in the target file
+    if grep -q "source ~/.bash_profiles/.profile_loader" "$target_file"; then
+        echo "The line to load profiles is already present in '$target_file'."
+    else
+        # Add the line to load profiles to the target file
+        echo "source ~/.bash_profiles/.profile_loader" >> "$target_file"
+        echo "Profiles will be loaded from '~/.bash_profiles' when the shell starts."
+    fi
+}
 
 function help {
     cat <<EOF
@@ -237,10 +259,16 @@ Commands:
   list                                List all profiles
   export <profile_name> <export_directory>  Export a profile to an export directory
   import <profile_file> <load_order>  Import a profile with a specific load order
+  install [<target_file>]             Install the profile loader line in the target file
+                                       (default: ~/.bash_profile)
+
   help                                Display this help message
+
+Note: The 'install' command installs the line to load profiles in the target file,
+      such as ~/.bash_profile. You can specify a different file by providing
+      an optional argument, e.g., prof install .zshrc.
 EOF
 }
-
 
 # Entry point of the script
 main "$@"
