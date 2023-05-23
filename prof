@@ -3,7 +3,7 @@
 function main {
     case "$1" in
         create)
-            create_profile "$2"
+            create_profile "$2" "$3"
             ;;
         edit)
             edit_profile "$2"
@@ -30,10 +30,61 @@ function main {
     esac
 }
 
+
 function create_profile {
-    echo "Create profile function called with profile name: $1"
-    # Implement profile creation logic here.
+    if [ -z "$1" ]; then
+        echo "Error: No profile name provided."
+        echo "Usage: prof create <profile_name> <load_order>"
+        return 1
+    fi
+
+    if [ -z "$2" ]; then
+        echo "Error: No load order provided."
+        echo "Usage: prof create <profile_name> <load_order>"
+        return 1
+    fi
+
+    if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        echo "Error: Load order must be a positive integer."
+        return 1
+    fi
+
+    if ! [[ "$1" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        echo "Error: Profile name can only contain letters, numbers, underscores, and hyphens."
+        return 1
+    fi
+
+    local profile_name=$1
+    local load_order=$2
+
+    # Ensure the ~/.bash_profiles directory exists
+    mkdir -p ~/.bash_profiles
+
+    # Ensure the profile metadata file exists
+    touch ~/.bash_profiles/.profile_metadata
+
+    # Determine the user's preferred editor
+    local editor=${EDITOR:-vi}  # Default to vi if no editor is set
+
+    # Format the load order with leading zeros
+    printf -v formatted_load_order "%02d" "$load_order"
+
+    # Check if profile already exists
+    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+        echo "Profile $profile_name already exists."
+        return
+    fi
+
+    # Add the profile to the metadata file
+    echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
+
+    # Copy the template to the new profile file
+    cp profile_template.sh ~/.bash_profiles/$profile_name
+
+    # Open the new profile in the editor
+    $editor ~/.bash_profiles/$profile_name
 }
+
 
 function edit_profile {
     echo "Edit profile function called with profile name: $1"
