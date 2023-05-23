@@ -139,9 +139,23 @@ function delete_profile {
 
 
 function list_profiles {
-    echo "List profiles function called"
-    # Implement profile listing logic here.
+    # Check if the metadata file exists
+    if [ ! -f ~/.bash_profiles/.profile_metadata ]; then
+        echo "No profiles found."
+        return 1
+    fi
+
+    echo "Profiles:"
+    echo "---------"
+
+    # Read the metadata file line by line
+    while IFS= read -r line; do
+        local load_order=$(echo "$line" | awk '{print $1}')
+        local profile_name=$(echo "$line" | awk '{print $2}')
+        echo "[$load_order] $profile_name"
+    done < ~/.bash_profiles/.profile_metadata
 }
+
 
 function export_profile {
     echo "Export profile function called with profile name: $1 and destination: $2"
