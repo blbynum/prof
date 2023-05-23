@@ -236,15 +236,22 @@ function install_prof {
         return 1
     fi
 
-    # Check if the line already exists in the target file
-    if grep -q "source ~/.bash_profiles/.profile_loader" "$target_file"; then
-        echo "The line to load profiles is already present in '$target_file'."
+    # Check if the code already exists in the target file
+    if grep -q "# Load all profiles in the ~/.bash_profiles directory" "$target_file"; then
+        echo "The code to load profiles is already present in '$target_file'."
     else
-        # Add the line to load profiles to the target file
-        echo "source ~/.bash_profiles/.profile_loader" >> "$target_file"
+        # Add the code to load profiles to the target file
+        echo "" >> "$target_file"
+        echo "# Load all profiles in the ~/.bash_profiles directory" >> "$target_file"
+        echo 'for profile in ~/.bash_profiles/*; do' >> "$target_file"
+        echo '    if [ -f "$profile" ]; then' >> "$target_file"
+        echo '        source "$profile"' >> "$target_file"
+        echo '    fi' >> "$target_file"
+        echo 'done' >> "$target_file"
         echo "Profiles will be loaded from '~/.bash_profiles' when the shell starts."
     fi
 }
+
 
 function help {
     cat <<EOF
