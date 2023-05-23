@@ -224,10 +224,23 @@ function import_profile {
 }
 
 
-function display_help {
-    echo "Display help function called"
-    # Implement help display logic here.
+function help {
+    cat <<EOF
+prof - CLI tool for managing bash profiles
+
+Usage: prof <command> [arguments]
+
+Commands:
+  create <profile_name> <load_order>  Create a new profile
+  edit <profile_name>                 Edit an existing profile
+  delete <profile_name>               Delete an existing profile
+  list                                List all profiles
+  export <profile_name> <export_directory>  Export a profile to an export directory
+  import <profile_file> <load_order>  Import a profile with a specific load order
+  help                                Display this help message
+EOF
 }
+
 
 # Entry point of the script
 main "$@"
