@@ -13,25 +13,16 @@
 
 To install `prof`, you can follow these steps:
 
-1. Clone the repository to your local machine:
+1. Download the latest release of `prof` from the [GitHub release page](https://github.com/blbynum/prof/releases).
 
-   ```shell
-   git clone git@github.com:blbynum/prof.git
-   ```
 
-2. Change into the `prof` directory:
-
-   ```shell
-   cd prof
-   ```
-
-3. Make the `prof` script executable:
+2. Make the `prof` file executable:
 
    ```shell
    chmod +x prof
    ```
 
-4. (Optional) Copy the `prof` script to a directory in your PATH to make it globally accessible:
+3. (Optional) Copy the `prof` file to a directory in your PATH to make it globally accessible:
 
    ```shell
    cp prof /usr/local/bin
