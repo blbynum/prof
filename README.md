@@ -153,7 +153,21 @@ Here are some examples of how you can use `prof`:
    ```
 
 For more details on each command and its usage, refer to the
-
 [Usage](#usage) section above.
 
 ---
+
+## Upgrading from v1.0.0
+
+Upgrade Instructions:
+1. Download the latest release from the [GitHub repository](https://github.com/your_username/prof/releases).
+2. Replace your existing prof file with the new version.
+3. Update your existing profiles to include the new loading message by running the following script:
+   - Download the migration script from [this link](https://github.com/blbynum/prof/blob/release/1.1.0/resources/profiles_migration_1.1.0.sh).
+   - Open a terminal and navigate to the directory where you downloaded the script.
+   - Make the script executable with the command: `chmod +x profiles_migration_1.1.0.sh`.
+   - Run the script with the command: `./profiles_migration_1.1.0.sh`.
+   - The script will add the loading message to each existing profile that does not already contain it.
+
+---
+
