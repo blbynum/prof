@@ -15,8 +15,8 @@
 #   Ben Bynum
 #
 # Version:
-#   1.0.0
-#   05/23/2023
+#   1.1.0
+#   06/04/2023
 #
 # Repository:
 #   https://github.com/blbynum/prof
@@ -47,7 +47,6 @@
 ################################################################################
 
 
-# Global variable for profile template
 profile_template=$(cat << EOF
 #!/usr/bin/env bash
 
@@ -98,6 +97,7 @@ echo "Profile {profile_name} loaded."
 
 EOF
 )
+
 
 function create_profile {
     if [ -z "$1" ]; then
