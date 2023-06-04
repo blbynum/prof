@@ -92,10 +92,6 @@ profile_template=$(cat << EOF
 # Add anything else here
 
 # End of profile: {profile_name}
-
-# Print a message indicating that the profile has been loaded
-echo "Profile {profile_name} loaded."
-
 EOF
 )
 
