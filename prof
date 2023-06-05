@@ -15,7 +15,7 @@
 #   Ben Bynum
 #
 # Version:
-#   1.1.0
+#   1.1.1
 #   06/04/2023
 #
 # Repository:
@@ -145,6 +145,9 @@ function create_profile {
 
     # Add the profile to the metadata file
     echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
+
+    # Sort the metadata file by load order
+    sort ~/.bash_profiles/.profile_metadata -o ~/.bash_profiles/.profile_metadata
 
     # Create the profile file with the template content
     echo "${profile_template//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
