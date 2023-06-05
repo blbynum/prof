@@ -15,7 +15,7 @@
 #   Ben Bynum
 #
 # Version:
-#   1.1.1
+#   1.1.2
 #   06/04/2023
 #
 # Repository:
@@ -160,17 +160,40 @@ function create_profile {
 function edit_profile {
     if [ -z "$1" ]; then
         echo "Error: No profile name provided."
-        echo "Usage: prof edit <profile_name>"
+        echo "Usage: prof edit <profile_name> [new_load_order]"
         return 1
     fi
 
     local profile_name=$1
+    local new_load_order=$2
+
+    # Check if the new load order is a positive integer if provided
+    if [[ -n "$new_load_order" && ! "$new_load_order" =~ ^[0-9]+$ ]]; then
+        echo "Error: Load order must be a positive integer."
+        return 1
+    fi
 
     # Determine the user's preferred editor
     local editor=${EDITOR:-vi}  # Default to vi if no editor is set
 
     # Check if the profile exists
     if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+        # If a new load order is provided, update it
+        if [ -n "$new_load_order" ]; then
+            # Format the new load order with leading zeros
+            printf -v formatted_load_order "%02d" "$new_load_order"
+
+            # Identify the OS
+            case "$(uname -s)" in
+                Darwin*)    sed -i '' "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/.bash_profiles/.profile_metadata ;;
+                Linux*)     sed -i "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/.bash_profiles/.profile_metadata ;;
+                *)          echo "Unsupported OS" ;;
+            esac
+
+            # Sort the metadata file by load order
+            sort ~/.bash_profiles/.profile_metadata -o ~/.bash_profiles/.profile_metadata
+        fi
+
         # Open the profile in the editor
         $editor ~/.bash_profiles/$profile_name
     else
@@ -178,6 +201,8 @@ function edit_profile {
         return 1
     fi
 }
+
+
 
 function delete_profile {
     if [ -z "$1" ]; then
@@ -356,16 +381,15 @@ prof - CLI tool for managing bash profiles
 Usage: prof <command> [arguments]
 
 Commands:
-  create <profile_name> <load_order>  Create a new profile
-  edit <profile_name>                 Edit an existing profile
-  delete <profile_name>               Delete an existing profile
-  list                                List all profiles
+  create <profile_name> <load_order>        Create a new profile
+  edit <profile_name> [new_load_order]      Edit an existing profile (optional: update load order)
+  delete <profile_name>                     Delete an existing profile
+  list                                      List all profiles
   export <profile_name> <export_directory>  Export a profile to an export directory
-  import <profile_file> <load_order>  Import a profile with a specific load order
-  install [<target_file>]             Install the profile loader line in the target file
-                                       (default: ~/.bash_profile)
+  import <profile_file> <load_order>        Import a profile with a specific load order
+  install [<target_file>]                   Install the profile loader line in the target file (default: ~/.bash_profile)
 
-  help                                Display this help message
+  help                                      Display this help message
 
 Note: The 'install' command installs the line to load profiles in the target file,
       such as ~/.bash_profile. You can specify a different file by providing
@@ -373,13 +397,14 @@ Note: The 'install' command installs the line to load profiles in the target fil
 EOF
 }
 
+
 function main {
     case "$1" in
         create)
             create_profile "$2" "$3"
             ;;
         edit)
-            edit_profile "$2"
+            edit_profile "$2" "$3"
             ;;
         delete)
             delete_profile "$2"
