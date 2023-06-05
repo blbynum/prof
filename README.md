@@ -50,12 +50,12 @@ Creates a new profile with the specified name and load order.
 prof create <profile_name> <load_order>
 ```
 
-### edit <profile_name>
+### edit <profile_name> [new_load_order]
 
-Opens an existing profile in your preferred text editor for editing.
+Opens an existing profile in your preferred text editor for editing. Optionally, you can update the load order of the profile by providing a new load order as the second argument.
 
 ```shell
-prof edit <profile_name>
+prof edit <profile_name> [new_load_order]
 ```
 
 ### delete <profile_name>
