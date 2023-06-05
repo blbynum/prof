@@ -10,7 +10,7 @@ echo \"Profile $(basename {profile_file}) loaded.\""
 # Iterate over each profile file in the directory
 for file in "$profile_dir"/*; do
     # Exclude .profile_metadata file
-    if [[ "$file" == "$profile_dir/.profile_metadata" ]]; then
+    if [[ "$file" == "$profile_dir/.profile_metadata" || "$file" == "$profile_dir/.git" ]]; then
         continue
     fi
 

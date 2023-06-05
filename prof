@@ -15,7 +15,7 @@
 #   Ben Bynum
 #
 # Version:
-#   1.1.2
+#   1.1.3
 #   06/04/2023
 #
 # Repository:
@@ -56,39 +56,30 @@ profile_template=$(cat << EOF
 # ===============================================
 # Environment variables
 # ===============================================
-# export VARNAME=value
 
 # ===============================================
 # Path modifications
 # ===============================================
-# export PATH=\$PATH:/new/path
 
 # ===============================================
 # Functions
 # ===============================================
-# functionname() {
-#    command
-# }
 
 # ===============================================
 # Aliases
 # ===============================================
-# alias aliasname='command'
 
 # ===============================================
 # Prompt modifications
 # ===============================================
-# PS1='Your custom prompt here'
 
 # ===============================================
 # Profile specific settings/commands
 # ===============================================
-# Add any profile-specific settings or commands here
 
 # ===============================================
 # Other
 # ===============================================
-# Add anything else here
 
 # End of profile: {profile_name}
 
