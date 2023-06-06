@@ -15,7 +15,7 @@
 #   Ben Bynum
 #
 # Version:
-#   1.1.3
+#   1.1.4
 #   06/04/2023
 #
 # Repository:
@@ -334,12 +334,14 @@ function install_prof {
         # Add the code to load profiles to the target file
         cat << EOF >> "$target_file"
 
-# Load all profiles in the ~/.bash_profiles directory
-for profile in ~/.bash_profiles/*; do
-    if [ -f "\$profile" ]; then
-        source "\$profile"
+# Load profiles from ~/.bash_profiles directory based on load order in .profile_metadata
+while IFS= read -r line; do
+    profile_name=$(echo "$line" | cut -d' ' -f2)
+    profile_path=~/.bash_profiles/"$profile_name"
+    if [ -f "$profile_path" ]; then
+        source "$profile_path"
     fi
-done
+done < <(sort ~/.bash_profiles/.profile_metadata)
 
 EOF
 
