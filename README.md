@@ -13,10 +13,10 @@
 
 To install `prof`, you can follow these steps:
 
-1. Download the latest release of `prof` from the command line or from the [GitHub release page](https://github.com/blbynum/prof/releases).
+1. Download the latest release of `prof` from the command line (or you can download the latest release from your browser on the [GitHub release page](https://github.com/blbynum/prof/releases)):
 
    ```
-   wget https://github.com/blbynum/prof/releases/download/v1.1.3/prof
+   wget https://github.com/blbynum/prof/releases/download/v1.1.4/prof
    ```
 
 
