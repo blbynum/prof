@@ -299,6 +299,13 @@ function import_profile {
         return 1
     fi
 
+    # Ensure the ~/.bash_profiles directory exists
+    mkdir -p ~/.bash_profiles
+
+    # Ensure the profile metadata file exists
+    touch ~/.bash_profiles/.profile_metadata
+
+    # Get the profile name from the file path
     local profile_name=$(basename "$profile_file")
 
     # Format the load order with leading zeros
@@ -310,6 +317,7 @@ function import_profile {
     else
         # Copy the profile file to the ~/.bash_profiles directory
         cp "$profile_file" ~/.bash_profiles/
+        
         # Add the profile to the metadata file with the provided load order
         echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
         echo "Profile '$profile_name' imported with load order $formatted_load_order."
