@@ -212,8 +212,12 @@ function delete_profile {
             # Delete the profile file
             rm ~/.bash_profiles/$profile_name
             # Remove the profile from the metadata file
-            sed -i '' "/$profile_name/d" ~/.bash_profiles/.profile_metadata
-            echo "Profile '$profile_name' deleted."
+            if sed -i.bak "/$profile_name/d" ~/.bash_profiles/.profile_metadata; then
+                rm ~/.bash_profiles/.profile_metadata.bak  # Remove the backup file
+                echo "Profile '$profile_name' deleted."
+            else
+                echo "Failed to remove profile '$profile_name' from metadata file."
+            fi
         else
             echo "Deletion canceled."
         fi
