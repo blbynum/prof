@@ -381,7 +381,7 @@ EOF
 }
 
 function display_version {
-    echo "prof version $VERSION"
+    echo "prof $VERSION"
 }
 
 function display_help {
