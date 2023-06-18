@@ -380,6 +380,12 @@ EOF
     fi
 }
 
+function get_latest_version {
+    local newest_version=$(curl -s https://api.github.com/repos/blbynum/prof/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    newest_version=${newest_version:1} # trim v
+    echo "$newest_version"
+}
+
 function display_version {
     echo "prof $VERSION"
 }
@@ -402,7 +408,6 @@ Commands:
 
   version                                   Display the version of prof
   help                                      Display this help message
-
 EOF
 }
 
@@ -429,6 +434,9 @@ function main {
             ;;
         install)
             install_prof "$2"
+            ;;
+        update)
+            get_latest_version
             ;;
         version)
             display_version
