@@ -16,7 +16,7 @@
 #
 # Version:
 #   1.1.4
-#   06/04/2023
+#   06/18/2023
 #
 # Repository:
 #   https://github.com/blbynum/prof
@@ -46,6 +46,7 @@
 #
 ################################################################################
 
+VERSION=1.1.4
 
 profile_template=$(cat << EOF
 #!/usr/bin/env bash
@@ -379,9 +380,14 @@ EOF
     fi
 }
 
+function display_version {
+    echo "prof version $VERSION"
+}
+
 function display_help {
     cat <<EOF
 prof - CLI tool for managing bash profiles
+version: $VERSION
 
 Usage: prof <command> [arguments]
 
@@ -394,11 +400,9 @@ Commands:
   import <profile_file> <load_order>        Import a profile with a specific load order
   install [<target_file>]                   Install the profile loader line in the target file (default: ~/.bash_profile)
 
+  version                                   Display the version of prof
   help                                      Display this help message
 
-Note: The 'install' command installs the line to load profiles in the target file,
-      such as ~/.bash_profile. You can specify a different file by providing
-      an optional argument, e.g., prof install .zshrc.
 EOF
 }
 
@@ -425,6 +429,9 @@ function main {
             ;;
         install)
             install_prof "$2"
+            ;;
+        version)
+            display_version
             ;;
         help)
             display_help
