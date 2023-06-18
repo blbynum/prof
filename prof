@@ -386,6 +386,45 @@ function get_latest_version {
     echo "$newest_version"
 }
 
+function update_prof {
+    local latest_version=$(get_latest_version)
+    local current_version=$(display_version)
+
+    if [ "$latest_version" == "$current_version" ]; then
+        echo "You are already using the latest version of prof ($current_version)."
+    else
+        # prompt the user to confirm the update
+        echo "A new version of prof is available ($latest_version)."
+        read -p "Would you like to update? (y/n) " -n 1 -r
+        echo  # move to a new line
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+
+        echo "Updating prof from $current_version to $latest_version..."
+        curl -sL https://raw.githubusercontent.com/blbynum/prof/master/prof > prof
+        chmod +x prof
+
+        # find the location of the current prof executable
+        local prof_location=$(which prof)
+
+        # if prof is not in PATH, use the default location
+        if [ -z "$prof_location" ]; then
+            prof_location=/usr/local/bin/prof
+        fi
+
+        # make sure the directory exists
+        mkdir -p "$(dirname "$prof_location")"
+
+        # replace the current prof executable with the new one
+        mv prof "$prof_location"
+
+        echo "prof updated to $latest_version."
+    fi
+}
+
+
+
 function display_version {
     echo "prof $VERSION"
 }
@@ -436,7 +475,7 @@ function main {
             install_prof "$2"
             ;;
         update)
-            get_latest_version
+            update_prof
             ;;
         version)
             display_version
