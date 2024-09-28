@@ -90,7 +90,7 @@ EOF
 )
 
 
-function create_profile {
+create_profile() {
     if [ -z "$1" ]; then
         echo "Error: No profile name provided."
         echo "Usage: prof create <profile_name> <load_order>"
@@ -148,7 +148,7 @@ function create_profile {
 }
 
 
-function edit_profile {
+edit_profile() {
     if [ -z "$1" ]; then
         echo "Error: No profile name provided."
         echo "Usage: prof edit <profile_name> [new_load_order]"
@@ -195,7 +195,7 @@ function edit_profile {
 
 
 
-function delete_profile {
+delete_profile() {
     if [ -z "$1" ]; then
         echo "Error: No profile name provided."
         echo "Usage: prof delete <profile_name>"
@@ -224,7 +224,7 @@ function delete_profile {
 }
 
 
-function list_profiles {
+list_profiles() {
     # Check if the metadata file exists
     if [ ! -f ~/.bash_profiles/.profile_metadata ]; then
         echo "No profiles found."
@@ -242,7 +242,7 @@ function list_profiles {
     done < ~/.bash_profiles/.profile_metadata
 }
 
-function export_profile {
+export_profile() {
     local profile_name=$1
     local export_directory=$2
 
@@ -273,7 +273,7 @@ function export_profile {
     fi
 }
 
-function import_profile {
+import_profile() {
     local profile_file=$1
     local load_order=$2
 
@@ -317,7 +317,7 @@ function import_profile {
 }
 
 
-function install_prof {
+install_prof() {
     local target_file=${1:-~/.bash_profile}
 
     # Check if the target file exists
@@ -365,7 +365,7 @@ EOF
     fi
 }
 
-function display_help {
+display_help() {
     cat <<EOF
 prof - CLI tool for managing bash profiles
 
@@ -389,7 +389,7 @@ EOF
 }
 
 
-function main {
+main() {
     case "$1" in
         create)
             create_profile "$2" "$3"
