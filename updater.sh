@@ -33,18 +33,13 @@ version_compare() {
         return 0
     fi
     local IFS=.
-    local i ver1=($1) ver2=($2)
-    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
-        ver1[i]=0
-    done
-    for ((i=0; i<${#ver1[@]}; i++)); do
-        if [[ -z ${ver2[i]} ]]; then
-            ver2[i]=0
-        fi
-        if ((10#${ver1[i]} > 10#${ver2[i]})); then
+    local i ver1=(${1#v}) ver2=(${2#v})
+    for ((i=0; i<${#ver1[@]} || i<${#ver2[@]}; i++)); do
+        local v1=${ver1[i]:-0}
+        local v2=${ver2[i]:-0}
+        if ((v1 > v2)); then
             return 1
-        fi
-        if ((10#${ver1[i]} < 10#${ver2[i]})); then
+        elif ((v1 < v2)); then
             return 2
         fi
     done
@@ -69,9 +64,12 @@ run_migrations() {
         local version=${version_tag#v}  # Remove 'v' prefix if present
         debug "Cleaned version: $version"
 
-        if [ "$(printf '%s\n' "$from_version" "$version" | sort -V | head -n1)" = "$from_version" ] && \
-           [ "$from_version" != "$version" ] && \
-           [ "$(printf '%s\n' "$version" "$to_version" | sort -V | tail -n1)" = "$to_version" ]; then
+        version_compare "$from_version" "$version_tag"
+        local from_compare=$?
+        version_compare "$version_tag" "$to_version"
+        local to_compare=$?
+
+        if [ $from_compare -eq 2 ] && [ $to_compare -ne 1 ]; then
             local migration_script="migration-${version}.sh"
             debug "Looking for migration script: $migration_script"
             local download_url=$(echo "$all_releases" | jq -r ".[] | select(.tag_name == \"$version_tag\") | .assets[] | select(.name == \"$migration_script\") | .browser_download_url")
