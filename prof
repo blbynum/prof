@@ -371,7 +371,6 @@ EOF
     fi
 }
 
-
 check_for_update() {
     echo "Current version: $VERSION"
     echo "Checking for updates..."
@@ -381,31 +380,54 @@ check_for_update() {
     else
         release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
     fi
-    
+
     if [ $? -ne 0 ]; then
         die "Failed to fetch release information." "Check your internet connection."
     fi
 
     local latest_version
-    latest_version=$(echo "$release_info" | awk -F'"' '/"tag_name":/ {print $4; exit}')
+    latest_version=$(echo "$release_info" | jq -r 'if type == "array" then .[0].tag_name else .tag_name end')
 
-    if [ -z "$latest_version" ]; then
+    if [ -z "$latest_version" ] || [ "$latest_version" == "null" ]; then
+        echo "Raw JSON response:" >&2
+        echo "$release_info" | jq '.' >&2
         die "Failed to parse latest version." "The GitHub API response may have changed. Please report this issue."
     fi
 
-    if [ "$(printf '%s\n' "$VERSION" "$latest_version" | sort -V | tail -n1)" != "$VERSION" ]; then
+    latest_version=${latest_version#v}  # Remove 'v' prefix if present
+    local current_version=${VERSION#v}  # Remove 'v' prefix if present
+
+    # Function to compare versions
+    version_gte() {
+        [ "$(printf '%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+    }
+
+    local update_available=false
+    if [ "$ALLOW_PRERELEASES" = true ]; then
+        # Prioritize SNAPSHOT versions when ALLOW_PRERELEASES is true
+        if [[ "$latest_version" == *-SNAPSHOT ]] && version_gte "$latest_version" "$current_version"; then
+            update_available=true
+        elif [[ "$latest_version" != *-SNAPSHOT ]] && version_gte "$latest_version" "$current_version" && [[ "$current_version" != *-SNAPSHOT ]]; then
+            update_available=true
+        fi
+    else
+        # Regular version comparison for stable releases
+        version_gte "$latest_version" "$current_version" && [[ "$latest_version" != *-SNAPSHOT ]] && update_available=true
+    fi
+
+    if [ "$update_available" = true ]; then
         echo "Update available: $latest_version"
         local updater_url
-        updater_url=$(echo "$release_info" | awk -F'"' '/"browser_download_url":.*updater\.sh/ {print $4; exit}')
-        
-        if [ -z "$updater_url" ]; then
+        updater_url=$(echo "$release_info" | jq -r 'if type == "array" then .[0] else . end | .assets[] | select(.name == "updater.sh") | .browser_download_url')
+
+        if [ -z "$updater_url" ] || [ "$updater_url" == "null" ]; then
             die "Failed to find updater script URL." "The release may not have an attached updater script. Check the GitHub repository."
         fi
 
         echo "Do you want to update to version $latest_version? (y/n): "
         read -r answer
         if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-            run_updater "$updater_url"
+            run_updater "$updater_url" "$latest_version"
         else
             echo "Update cancelled."
         fi
@@ -416,6 +438,7 @@ check_for_update() {
 
 run_updater() {
     local updater_url="$1"
+    local latest_version="$2"
     local temp_file
     temp_file=$(mktemp)
 
@@ -430,7 +453,7 @@ run_updater() {
     fi
 
     chmod +x "$temp_file"
-    "$temp_file" "$SCRIPT_PATH" "$VERSION" "$GITHUB_REPO" "$ALLOW_PRERELEASES"
+    "$temp_file" "$SCRIPT_PATH" "$VERSION" "$GITHUB_REPO" "$ALLOW_PRERELEASES" "$latest_version"
     exit_code=$?
 
     [ -f "$temp_file" ] && rm "$temp_file"
