@@ -18,14 +18,15 @@ debug() {
     fi
 }
 
-if [ $# -ne 4 ]; then
-    die "Usage: $0 <script_path> <current_version> <github_repo> <allow_prereleases>"
+if [ $# -ne 5 ]; then
+    die "Usage: $0 <script_path> <current_version> <github_repo> <allow_prereleases> <latest_version>"
 fi
 
 SCRIPT_PATH="$1"
 CURRENT_VERSION="$2"
 GITHUB_REPO="$3"
 ALLOW_PRERELEASES="$4"
+LATEST_VERSION="$5"
 
 version_compare() {
     if [[ $1 == $2 ]]; then
@@ -101,12 +102,9 @@ run_migrations() {
     rm -rf "$temp_dir"
 }
 
-echo "Checking for updates..."
-if [ "$ALLOW_PRERELEASES" = true ]; then
-    release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases")
-else
-    release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
-fi
+echo "Updating from version $CURRENT_VERSION to $LATEST_VERSION..."
+
+release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/tags/$LATEST_VERSION")
 
 if [ $? -ne 0 ]; then
     die "Failed to fetch release information." "Check your internet connection."
@@ -114,27 +112,7 @@ fi
 
 debug "Release info: $release_info"
 
-latest_version=$(echo "$release_info" | jq -r 'if type == "array" then .[0].tag_name else .tag_name end')
-
-if [ -z "$latest_version" ] || [ "$latest_version" == "null" ]; then
-    echo "Raw JSON response:" >&2
-    echo "$release_info" | jq '.' >&2
-    die "Failed to parse latest version." "The GitHub API response may have changed. Please report this issue."
-fi
-
-debug "Latest version: $latest_version"
-
-latest_version=${latest_version#v}  # Remove 'v' prefix if present
-CURRENT_VERSION=${CURRENT_VERSION#v}  # Remove 'v' prefix if present
-
-if version_compare "$CURRENT_VERSION" "$latest_version"; then
-    echo "No updates available."
-    exit 0
-fi
-
-echo "Updating from version $CURRENT_VERSION to $latest_version..."
-
-download_url=$(echo "$release_info" | jq -r 'if type == "array" then .[0] else . end | .assets[] | select(.name == "prof") | .browser_download_url')
+download_url=$(echo "$release_info" | jq -r '.assets[] | select(.name == "prof") | .browser_download_url')
 
 if [ -z "$download_url" ] || [ "$download_url" == "null" ]; then
     echo "Raw JSON response:" >&2
@@ -156,7 +134,7 @@ if [ ! -s "$temp_file" ]; then
     die "Downloaded file is empty." "The download may have been interrupted. Please try again."
 fi
 
-run_migrations "$CURRENT_VERSION" "$latest_version"
+run_migrations "$CURRENT_VERSION" "$LATEST_VERSION"
 
 if ! chmod +x "$temp_file"; then
     rm "$temp_file"
@@ -168,7 +146,7 @@ if ! mv "$temp_file" "$SCRIPT_PATH"; then
     die "Failed to replace the old script with the new version." "Check your file system permissions."
 fi
 
-echo "Update successful. New version: $latest_version"
+echo "Update successful. New version: $LATEST_VERSION"
 
 [ -f "$0" ] && rm "$0" 2>/dev/null
 
