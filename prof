@@ -371,7 +371,6 @@ EOF
     fi
 }
 
-
 check_for_update() {
     echo "Current version: $VERSION"
     echo "Checking for updates..."
@@ -381,7 +380,7 @@ check_for_update() {
     else
         release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
     fi
-    
+
     if [ $? -ne 0 ]; then
         die "Failed to fetch release information." "Check your internet connection."
     fi
@@ -393,11 +392,31 @@ check_for_update() {
         die "Failed to parse latest version." "The GitHub API response may have changed. Please report this issue."
     fi
 
-    if [ "$(printf '%s\n' "$VERSION" "$latest_version" | sort -V | tail -n1)" != "$VERSION" ]; then
+    # Function to compare versions
+    version_gte() {
+        local v1=$(echo "$1" | sed 's/-SNAPSHOT$//')
+        local v2=$(echo "$2" | sed 's/-SNAPSHOT$//')
+        [ "$(printf '%s\n' "$v1" "$v2" | sort -V | tail -n1)" = "$v1" ]
+    }
+
+    local update_available=false
+    if [ "$ALLOW_PRERELEASES" = true ]; then
+        # Prioritize SNAPSHOT versions when ALLOW_PRERELEASES is true
+        if [[ "$latest_version" == *-SNAPSHOT ]] && version_gte "$latest_version" "$VERSION"; then
+            update_available=true
+        elif [[ "$latest_version" != *-SNAPSHOT ]] && version_gte "$latest_version" "$VERSION" && [[ "$VERSION" != *-SNAPSHOT ]]; then
+            update_available=true
+        fi
+    else
+        # Regular version comparison for stable releases
+        version_gte "$latest_version" "$VERSION" && [[ "$latest_version" != *-SNAPSHOT ]] && update_available=true
+    fi
+
+    if [ "$update_available" = true ]; then
         echo "Update available: $latest_version"
         local updater_url
         updater_url=$(echo "$release_info" | awk -F'"' '/"browser_download_url":.*updater\.sh/ {print $4; exit}')
-        
+
         if [ -z "$updater_url" ]; then
             die "Failed to find updater script URL." "The release may not have an attached updater script. Check the GitHub repository."
         fi
