@@ -46,7 +46,10 @@
 #
 ################################################################################
 
-profile_template=$(cat << EOF
+VERSION="v1.1.4-SNAPSHOT"
+GITHUB_REPO="blbynum/prof"
+
+PROFILE_TEMPLATE=$(cat << EOF
 #!/usr/bin/env bash
 
 # Profile: {profile_name}
@@ -87,6 +90,24 @@ echo "Profile {profile_name} loaded."
 
 EOF
 )
+
+get_script_path() {
+    local source="${BASH_SOURCE[0]}"
+    
+    # Resolve $source until the file is no longer a symlink
+    while [ -h "$source" ]; do
+        local dir="$( cd -P "$( dirname "$source" )" && pwd )"
+        source="$(readlink "$source")"
+        # If $source was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+        [[ $source != /* ]] && source="$dir/$source"
+    done
+    
+    local dir="$( cd -P "$( dirname "$source" )" && pwd )"
+    echo "$dir/$(basename "$source")"
+}
+
+SCRIPT_PATH=$(get_script_path)
+SCRIPT_NAME=$(basename "$SCRIPT_PATH")
 
 die() {
     if [ -n "$1" ]; then
@@ -142,7 +163,7 @@ create_profile() {
     sort ~/.bash_profiles/.profile_metadata -o ~/.bash_profiles/.profile_metadata
 
     # Create the profile file with the template content
-    echo "${profile_template//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
+    echo "${PROFILE_TEMPLATE//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
 
     # Open the new profile in the editor
     $editor ~/.bash_profiles/$profile_name
@@ -346,6 +367,80 @@ EOF
     fi
 }
 
+check_for_update() {
+    echo "Checking for updates..."
+    local latest_release_info
+    latest_release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
+    
+    if [ $? -ne 0 ]; then
+        die "Failed to fetch release information." "Check your internet connection."
+    fi
+
+    local latest_version
+    latest_version=$(echo "$latest_release_info" | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"//;s/"//')
+
+    if [ -z "$latest_version" ]; then
+        die "Failed to parse latest version." "The GitHub API response may have changed. Please report this issue."
+    fi
+
+    if [ "$(printf '%s\n' "$VERSION" "$latest_version" | sort -V | tail -n1)" != "$VERSION" ]; then
+        echo "Update available: $latest_version"
+        local updater_url
+        updater_url=$(echo "$latest_release_info" | grep -o '"browser_download_url": *"[^"]*"' | grep "updater.sh" | sed 's/"browser_download_url": *"//;s/"//')
+        
+        if [ -z "$updater_url" ]; then
+            die "Failed to find updater script URL." "The release may not have an attached updater script. Check the GitHub repository."
+        fi
+
+        echo "Do you want to update to version $latest_version? (y/n): "
+        read -r answer
+        if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+            run_updater "$updater_url"
+        else
+            echo "Update cancelled."
+        fi
+    else
+        echo "No updates available."
+    fi
+}
+
+run_updater() {
+    local updater_url="$1"
+    local temp_file
+    temp_file=$(mktemp)
+
+    if ! curl -sL "$updater_url" -o "$temp_file"; then
+        rm "$temp_file"
+        die "Failed to download the updater script." "Check your internet connection."
+    fi
+
+    if [ ! -s "$temp_file" ]; then
+        rm "$temp_file"
+        die "Downloaded updater script is empty." "The download may have been interrupted. Please try again."
+    fi
+
+    chmod +x "$temp_file"
+    "$temp_file" "$SCRIPT_PATH" "$VERSION" "$GITHUB_REPO"
+    exit_code=$?
+
+    rm "$temp_file"
+
+    if [ $exit_code -ne 0 ]; then
+        die "Updater script failed."
+    fi
+
+    echo "Update process completed. Run the script again."
+    exit 0
+}
+
+update() {
+    if ! command -v curl &> /dev/null; then
+        die "curl is required but not installed." "Install curl and try again."
+    fi
+
+    check_for_update
+}
+
 display_help() {
     cat <<EOF
 prof - CLI tool for managing bash profiles
@@ -360,6 +455,7 @@ Commands:
   export <profile_name> <export_directory>  Export a profile to an export directory
   import <profile_file> <load_order>        Import a profile with a specific load order
   install [<target_file>]                   Install the profile loader line in the target file (default: ~/.bash_profile)
+  update                                    Check for updates to prof. User will be prompted for consent before installing update. 
 
   help                                      Display this help message
 
@@ -392,6 +488,9 @@ main() {
             ;;
         install)
             install_prof "$2"
+            ;;
+        update)
+            update
             ;;
         help)
             display_help
