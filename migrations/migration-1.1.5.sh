@@ -8,6 +8,8 @@ ROOT_PROFILE=""
 
 error_exit() { echo "Error: $1" >&2; exit 1; }
 
+echo "Running v1.1.5 migration..."
+
 migrate_directory() {
     if [ -d "$PROFILES_DIR" ]; then
         echo "$PROFILES_DIR already exists."

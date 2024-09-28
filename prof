@@ -15,7 +15,7 @@
 #   Ben Bynum
 #
 # Version:
-#   1.1.4
+#   1.1.5
 #   09/28/2024
 #
 # Repository:
@@ -46,10 +46,10 @@
 #
 ################################################################################
 
-VERSION="v1.1.4"
+VERSION="v1.1.5-SNAPSHOT"
 GITHUB_REPO="blbynum/prof"
 
-ALLOW_PRERELEASES=false
+ALLOW_PRERELEASES=true
 PROFILES_DIR=".profiles"
 PROFILE_METADATA_FILE=".profile_metadata"
 
