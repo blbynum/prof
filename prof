@@ -50,6 +50,8 @@ VERSION="v1.1.4"
 GITHUB_REPO="blbynum/prof"
 
 ALLOW_PRERELEASES=false
+PROFILES_DIR=".profiles"
+PROFILE_METADATA_FILE=".profile_metadata"
 
 PROFILE_TEMPLATE=$(cat << EOF
 #!/usr/bin/env bash
@@ -141,11 +143,11 @@ create_profile() {
     local profile_name=$1
     local load_order=$2
 
-    # Ensure the ~/.bash_profiles directory exists
-    mkdir -p ~/.bash_profiles
+    # Ensure the ~/$PROFILES_DIR directory exists
+    mkdir -p ~/$PROFILES_DIR
 
     # Ensure the profile metadata file exists
-    touch ~/.bash_profiles/.profile_metadata
+    touch ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
 
     # Determine the user's preferred editor
     local editor=${EDITOR:-vi}  # Default to vi if no editor is set
@@ -154,21 +156,21 @@ create_profile() {
     printf -v formatted_load_order "%02d" "$load_order"
 
     # Check if profile already exists
-    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+    if grep -qw "$profile_name" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE; then
         die "Profile $profile_name already exists."
     fi
 
     # Add the profile to the metadata file
-    echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
+    echo "$formatted_load_order $profile_name" >> ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
 
     # Sort the metadata file by load order
-    sort ~/.bash_profiles/.profile_metadata -o ~/.bash_profiles/.profile_metadata
+    sort ~/$PROFILES_DIR/$PROFILE_METADATA_FILE -o ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
 
     # Create the profile file with the template content
-    echo "${PROFILE_TEMPLATE//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
+    echo "${PROFILE_TEMPLATE//\{profile_name\}/$profile_name}" > ~/$PROFILES_DIR/$profile_name
 
     # Open the new profile in the editor
-    $editor ~/.bash_profiles/$profile_name
+    $editor ~/$PROFILES_DIR/$profile_name
 }
 
 
@@ -189,7 +191,7 @@ edit_profile() {
     local editor=${EDITOR:-vi}  # Default to vi if no editor is set
 
     # Check if the profile exists
-    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+    if grep -qw "$profile_name" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE; then
         # If a new load order is provided, update it
         if [ -n "$new_load_order" ]; then
             # Format the new load order with leading zeros
@@ -197,17 +199,17 @@ edit_profile() {
 
             # Identify the OS
             case "$(uname -s)" in
-                Darwin*)    sed -i '' "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/.bash_profiles/.profile_metadata ;;
-                Linux*)     sed -i "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/.bash_profiles/.profile_metadata ;;
-                *)          die "Unsupported OS. Cannot determind editor. Edit profiles manually in the ~/.bash_profiles directory." ;;
+                Darwin*)    sed -i '' "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE ;;
+                Linux*)     sed -i "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE ;;
+                *)          die "Unsupported OS. Cannot determind editor. Edit profiles manually in the ~/$PROFILES_DIR directory." ;;
             esac
 
             # Sort the metadata file by load order
-            sort ~/.bash_profiles/.profile_metadata -o ~/.bash_profiles/.profile_metadata
+            sort ~/$PROFILES_DIR/$PROFILE_METADATA_FILE -o ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
         fi
 
         # Open the profile in the editor
-        $editor ~/.bash_profiles/$profile_name
+        $editor ~/$PROFILES_DIR/$profile_name
     else
         die "Error: Profile $profile_name does not exist."
     fi
@@ -223,14 +225,14 @@ delete_profile() {
     local profile_name=$1
 
     # Check if the profile exists
-    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+    if grep -qw "$profile_name" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE; then
         # Prompt for confirmation
         read -p "Are you sure you want to delete the profile '$profile_name'? This action cannot be undone. (y/n): " confirm
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
             # Delete the profile file
-            rm ~/.bash_profiles/$profile_name
+            rm ~/$PROFILES_DIR/$profile_name
             # Remove the profile from the metadata file
-            sed -i '' "/$profile_name/d" ~/.bash_profiles/.profile_metadata
+            sed -i '' "/$profile_name/d" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
             echo "Profile '$profile_name' deleted."
         else
             echo "Deletion canceled."
@@ -243,7 +245,7 @@ delete_profile() {
 
 list_profiles() {
     # Check if the metadata file exists
-    if [ ! -f ~/.bash_profiles/.profile_metadata ]; then
+    if [ ! -f ~/$PROFILES_DIR/$PROFILE_METADATA_FILE ]; then
         echo "No profiles found."
         return 0
     fi
@@ -256,7 +258,7 @@ list_profiles() {
         local load_order=$(echo "$line" | awk '{print $1}')
         local profile_name=$(echo "$line" | awk '{print $2}')
         echo "[$load_order] $profile_name"
-    done < ~/.bash_profiles/.profile_metadata
+    done < ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
 }
 
 export_profile() {
@@ -272,12 +274,12 @@ export_profile() {
     fi
 
     # Check if the profile exists
-    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+    if grep -qw "$profile_name" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE; then
         # Create the export directory if it doesn't exist
         mkdir -p "$export_directory"
 
         # Copy the profile file to the export directory
-        cp ~/.bash_profiles/$profile_name "$export_directory/$profile_name"
+        cp ~/$PROFILES_DIR/$profile_name "$export_directory/$profile_name"
 
         echo "Profile '$profile_name' exported to $export_directory."
     else
@@ -311,13 +313,13 @@ import_profile() {
     printf -v formatted_load_order "%02d" "$load_order"
 
     # Check if the profile already exists
-    if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
+    if grep -qw "$profile_name" ~/$PROFILES_DIR/$PROFILE_METADATA_FILE; then
         echo "Profile '$profile_name' already exists. Skipping import."
     else
-        # Copy the profile file to the ~/.bash_profiles directory
-        cp "$profile_file" ~/.bash_profiles/
+        # Copy the profile file to the ~/$PROFILES_DIR directory
+        cp "$profile_file" ~/$PROFILES_DIR/
         # Add the profile to the metadata file with the provided load order
-        echo "$formatted_load_order $profile_name" >> ~/.bash_profiles/.profile_metadata
+        echo "$formatted_load_order $profile_name" >> ~/$PROFILES_DIR/$PROFILE_METADATA_FILE
         echo "Profile '$profile_name' imported with load order $formatted_load_order."
     fi
 }
@@ -332,14 +334,14 @@ install_prof() {
     fi
 
     # Check if the code already exists in the target file
-    if grep -q "# Load all profiles in the ~/.bash_profiles directory" "$target_file"; then
+    if grep -q "# Load all profiles in the ~/$PROFILES_DIR directory" "$target_file"; then
         echo "The code to load profiles is already present in '$target_file'."
     else
         # Add the code to load profiles to the target file
         cat << EOF >> "$target_file"
 
-# Load all profiles in the ~/.bash_profiles directory
-for profile in ~/.bash_profiles/*; do
+# Load all profiles in the ~/$PROFILES_DIR directory
+for profile in ~/$PROFILES_DIR/*; do
     if [ -f "\$profile" ]; then
         source "\$profile"
     fi
@@ -350,7 +352,7 @@ EOF
         # Display instructions for adding prof to PATH
         cat << EOF
 
-A loop has been added to $target_file to load all profiles in the ~/.bash_profiles directory.
+A loop has been added to $target_file to load all profiles in the ~/$PROFILES_DIR directory.
 
 To use the 'prof' command, you have two options:
 
