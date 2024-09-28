@@ -15,8 +15,8 @@
 #   Ben Bynum
 #
 # Version:
-#   1.1.3
-#   06/04/2023
+#   1.1.4
+#   09/28/2024
 #
 # Repository:
 #   https://github.com/blbynum/prof
@@ -24,7 +24,7 @@
 # License:
 #   MIT License
 #
-#   Copyright (c) 2023 Ben Bynum
+#   Copyright (c) 2024 Ben Bynum
 #
 #   Permission is hereby granted, free of charge, to any person obtaining a copy
 #   of this software and associated documentation files (the "Software"), to deal
@@ -46,8 +46,12 @@
 #
 ################################################################################
 
+VERSION="v1.1.4"
+GITHUB_REPO="blbynum/prof"
 
-profile_template=$(cat << EOF
+ALLOW_PRERELEASES=false
+
+PROFILE_TEMPLATE=$(cat << EOF
 #!/usr/bin/env bash
 
 # Profile: {profile_name}
@@ -89,28 +93,49 @@ echo "Profile {profile_name} loaded."
 EOF
 )
 
+get_script_path() {
+    local source="${BASH_SOURCE[0]}"
+    
+    # Resolve $source until the file is no longer a symlink
+    while [ -h "$source" ]; do
+        local dir="$( cd -P "$( dirname "$source" )" && pwd )"
+        source="$(readlink "$source")"
+        # If $source was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+        [[ $source != /* ]] && source="$dir/$source"
+    done
+    
+    local dir="$( cd -P "$( dirname "$source" )" && pwd )"
+    echo "$dir/$(basename "$source")"
+}
 
-function create_profile {
+SCRIPT_PATH=$(get_script_path)
+SCRIPT_NAME=$(basename "$SCRIPT_PATH")
+
+die() {
+    if [ -n "$1" ]; then
+        echo "$1" >&2
+    fi
+    if [ -n "$2" ]; then
+        echo "$2" >&2
+    fi
+    exit 1
+}
+
+create_profile() {
     if [ -z "$1" ]; then
-        echo "Error: No profile name provided."
-        echo "Usage: prof create <profile_name> <load_order>"
-        return 1
+        die "Error: No profile name provided." "Usage: prof create <profile_name> <load_order>"
     fi
 
     if [ -z "$2" ]; then
-        echo "Error: No load order provided."
-        echo "Usage: prof create <profile_name> <load_order>"
-        return 1
+        die "Error: No load order provided." "Usage: prof create <profile_name> <load_order>"
     fi
 
     if ! [[ "$2" =~ ^[0-9]+$ ]]; then
-        echo "Error: Load order must be a positive integer."
-        return 1
+        die "Error: Load order must be a positive integer."
     fi
 
     if ! [[ "$1" =~ ^[A-Za-z0-9_-]+$ ]]; then
-        echo "Error: Profile name can only contain letters, numbers, underscores, and hyphens."
-        return 1
+        die "Error: Profile name can only contain letters, numbers, underscores, and hyphens."
     fi
 
     local profile_name=$1
@@ -130,8 +155,7 @@ function create_profile {
 
     # Check if profile already exists
     if grep -qw "$profile_name" ~/.bash_profiles/.profile_metadata; then
-        echo "Profile $profile_name already exists."
-        return
+        die "Profile $profile_name already exists."
     fi
 
     # Add the profile to the metadata file
@@ -141,18 +165,16 @@ function create_profile {
     sort ~/.bash_profiles/.profile_metadata -o ~/.bash_profiles/.profile_metadata
 
     # Create the profile file with the template content
-    echo "${profile_template//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
+    echo "${PROFILE_TEMPLATE//\{profile_name\}/$profile_name}" > ~/.bash_profiles/$profile_name
 
     # Open the new profile in the editor
     $editor ~/.bash_profiles/$profile_name
 }
 
 
-function edit_profile {
+edit_profile() {
     if [ -z "$1" ]; then
-        echo "Error: No profile name provided."
-        echo "Usage: prof edit <profile_name> [new_load_order]"
-        return 1
+        die "Error: No profile name provided." "Usage: prof edit <profile_name> [new_load_order]"
     fi
 
     local profile_name=$1
@@ -160,8 +182,7 @@ function edit_profile {
 
     # Check if the new load order is a positive integer if provided
     if [[ -n "$new_load_order" && ! "$new_load_order" =~ ^[0-9]+$ ]]; then
-        echo "Error: Load order must be a positive integer."
-        return 1
+        die "Error: Load order must be a positive integer."
     fi
 
     # Determine the user's preferred editor
@@ -178,7 +199,7 @@ function edit_profile {
             case "$(uname -s)" in
                 Darwin*)    sed -i '' "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/.bash_profiles/.profile_metadata ;;
                 Linux*)     sed -i "s/^.*$profile_name$/$formatted_load_order $profile_name/" ~/.bash_profiles/.profile_metadata ;;
-                *)          echo "Unsupported OS" ;;
+                *)          die "Unsupported OS. Cannot determind editor. Edit profiles manually in the ~/.bash_profiles directory." ;;
             esac
 
             # Sort the metadata file by load order
@@ -188,18 +209,15 @@ function edit_profile {
         # Open the profile in the editor
         $editor ~/.bash_profiles/$profile_name
     else
-        echo "Error: Profile $profile_name does not exist."
-        return 1
+        die "Error: Profile $profile_name does not exist."
     fi
 }
 
 
 
-function delete_profile {
+delete_profile() {
     if [ -z "$1" ]; then
-        echo "Error: No profile name provided."
-        echo "Usage: prof delete <profile_name>"
-        return 1
+        die "Error: No profile name provided." "Usage: prof delete <profile_name>"
     fi
 
     local profile_name=$1
@@ -218,17 +236,16 @@ function delete_profile {
             echo "Deletion canceled."
         fi
     else
-        echo "Error: Profile '$profile_name' does not exist."
-        return 1
+        die "Error: Profile '$profile_name' does not exist."
     fi
 }
 
 
-function list_profiles {
+list_profiles() {
     # Check if the metadata file exists
     if [ ! -f ~/.bash_profiles/.profile_metadata ]; then
         echo "No profiles found."
-        return 1
+        return 0
     fi
 
     echo "Profiles:"
@@ -242,20 +259,16 @@ function list_profiles {
     done < ~/.bash_profiles/.profile_metadata
 }
 
-function export_profile {
+export_profile() {
     local profile_name=$1
     local export_directory=$2
 
     if [ -z "$profile_name" ]; then
-        echo "Error: No profile name provided."
-        echo "Usage: prof export <profile_name> <export_directory>"
-        return 1
+        die "Error: No profile name provided." "Usage: prof export <profile_name> <export_directory>"
     fi
 
     if [ -z "$export_directory" ]; then
-        echo "Error: No export directory provided."
-        echo "Usage: prof export <profile_name> <export_directory>"
-        return 1
+        die "Error: No export directory provided." "Usage: prof export <profile_name> <export_directory>"
     fi
 
     # Check if the profile exists
@@ -268,35 +281,28 @@ function export_profile {
 
         echo "Profile '$profile_name' exported to $export_directory."
     else
-        echo "Error: Profile '$profile_name' does not exist."
-        return 1
+        die "Error: Profile '$profile_name' does not exist."
     fi
 }
 
-function import_profile {
+import_profile() {
     local profile_file=$1
     local load_order=$2
 
     if [ -z "$profile_file" ]; then
-        echo "Error: No profile file provided."
-        echo "Usage: prof import <profile_file> <load_order>"
-        return 1
+        die "Error: No profile file provided." "Usage: prof import <profile_file> <load_order>"
     fi
 
     if [ -z "$load_order" ]; then
-        echo "Error: No load order provided."
-        echo "Usage: prof import <profile_file> <load_order>"
-        return 1
+        die "Error: No load order provided." "Usage: prof import <profile_file> <load_order>"
     fi
 
     if ! [[ "$load_order" =~ ^[0-9]+$ ]]; then
-        echo "Error: Load order must be a positive integer."
-        return 1
+        die "Error: Load order must be a positive integer."
     fi
 
     if [ ! -f "$profile_file" ]; then
-        echo "Error: Profile file '$profile_file' does not exist."
-        return 1
+        die "Error: Profile file '$profile_file' does not exist."
     fi
 
     local profile_name=$(basename "$profile_file")
@@ -317,14 +323,12 @@ function import_profile {
 }
 
 
-function install_prof {
+install_prof() {
     local target_file=${1:-~/.bash_profile}
 
     # Check if the target file exists
     if [ ! -f "$target_file" ]; then
-        echo "Error: Target file '$target_file' does not exist."
-        echo "You can specify a different file by providing an argument, e.g., prof install .zshrc"
-        return 1
+        die "Error: Target file '$target_file' does not exist." "You can specify a different file by providing an argument, e.g., prof install .zshrc"
     fi
 
     # Check if the code already exists in the target file
@@ -365,7 +369,87 @@ EOF
     fi
 }
 
-function display_help {
+
+check_for_update() {
+    echo "Current version: $VERSION"
+    echo "Checking for updates..."
+    local release_info
+    if [ "$ALLOW_PRERELEASES" = true ]; then
+        release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases")
+    else
+        release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
+    fi
+    
+    if [ $? -ne 0 ]; then
+        die "Failed to fetch release information." "Check your internet connection."
+    fi
+
+    local latest_version
+    latest_version=$(echo "$release_info" | awk -F'"' '/"tag_name":/ {print $4; exit}')
+
+    if [ -z "$latest_version" ]; then
+        die "Failed to parse latest version." "The GitHub API response may have changed. Please report this issue."
+    fi
+
+    if [ "$(printf '%s\n' "$VERSION" "$latest_version" | sort -V | tail -n1)" != "$VERSION" ]; then
+        echo "Update available: $latest_version"
+        local updater_url
+        updater_url=$(echo "$release_info" | awk -F'"' '/"browser_download_url":.*updater\.sh/ {print $4; exit}')
+        
+        if [ -z "$updater_url" ]; then
+            die "Failed to find updater script URL." "The release may not have an attached updater script. Check the GitHub repository."
+        fi
+
+        echo "Do you want to update to version $latest_version? (y/n): "
+        read -r answer
+        if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+            run_updater "$updater_url"
+        else
+            echo "Update cancelled."
+        fi
+    else
+        echo "No updates available."
+    fi
+}
+
+run_updater() {
+    local updater_url="$1"
+    local temp_file
+    temp_file=$(mktemp)
+
+    if ! curl -sL "$updater_url" -o "$temp_file"; then
+        rm "$temp_file"
+        die "Failed to download the updater script." "Check your internet connection."
+    fi
+
+    if [ ! -s "$temp_file" ]; then
+        rm "$temp_file"
+        die "Downloaded updater script is empty." "The download may have been interrupted. Please try again."
+    fi
+
+    chmod +x "$temp_file"
+    "$temp_file" "$SCRIPT_PATH" "$VERSION" "$GITHUB_REPO" "$ALLOW_PRERELEASES"
+    exit_code=$?
+
+    [ -f "$temp_file" ] && rm "$temp_file"
+
+    if [ $exit_code -ne 0 ]; then
+        die "Updater script failed." "Check the error message above."
+    fi
+
+    echo "Prof has been updated!"
+    exit 0
+}
+
+update() {
+    if ! command -v curl &> /dev/null; then
+        die "curl is required but not installed." "Install curl and try again."
+    fi
+
+    check_for_update
+}
+
+display_help() {
     cat <<EOF
 prof - CLI tool for managing bash profiles
 
@@ -379,6 +463,7 @@ Commands:
   export <profile_name> <export_directory>  Export a profile to an export directory
   import <profile_file> <load_order>        Import a profile with a specific load order
   install [<target_file>]                   Install the profile loader line in the target file (default: ~/.bash_profile)
+  update                                    Check for updates to prof. User will be prompted for consent before installing update. 
 
   help                                      Display this help message
 
@@ -389,7 +474,7 @@ EOF
 }
 
 
-function main {
+main() {
     case "$1" in
         create)
             create_profile "$2" "$3"
@@ -412,12 +497,16 @@ function main {
         install)
             install_prof "$2"
             ;;
+        update)
+            update
+            ;;
         help)
             display_help
             ;;
         *)
             echo "Invalid command: $1"
             display_help
+            die
             ;;
     esac
 }

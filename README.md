@@ -16,7 +16,7 @@ To install `prof`, you can follow these steps:
 1. Download the latest release of `prof` from the command line or from the [GitHub release page](https://github.com/blbynum/prof/releases).
 
    ```
-   wget https://github.com/blbynum/prof/releases/download/v1.1.3/prof
+   wget https://github.com/blbynum/prof/releases/download/v1.1.4/prof
    ```
 
 
@@ -102,6 +102,14 @@ Installs `prof` by adding the code to load profiles to the target file (`~/.bash
 prof install [target_file]
 ```
 
+### update (version 1.1.4 and later)
+
+Updates prof to the latest version.
+
+```shell
+prof update
+```
+
 ### help
 
 Displays the help message with information on available commands.
@@ -156,12 +164,18 @@ Here are some examples of how you can use `prof`:
    prof install ~/.bashrc
    ```
 
+8. Update `prof` to the latest version:
+
+    ```shell
+    prof update
+    ```
+
 For more details on each command and its usage, refer to the
 [Usage](#usage) section above.
 
 ---
 
-## Upgrading from v1.0.0
+## Upgrading from v1.0.0 
 
 Upgrade Instructions:
 1. Download the latest release from the [GitHub repository](https://github.com/your_username/prof/releases).
