@@ -371,7 +371,6 @@ EOF
     fi
 }
 
-
 check_for_update() {
     echo "Current version: $VERSION"
     echo "Checking for updates..."
@@ -381,7 +380,7 @@ check_for_update() {
     else
         release_info=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
     fi
-    
+
     if [ $? -ne 0 ]; then
         die "Failed to fetch release information." "Check your internet connection."
     fi
@@ -397,7 +396,7 @@ check_for_update() {
         echo "Update available: $latest_version"
         local updater_url
         updater_url=$(echo "$release_info" | awk -F'"' '/"browser_download_url":.*updater\.sh/ {print $4; exit}')
-        
+
         if [ -z "$updater_url" ]; then
             die "Failed to find updater script URL." "The release may not have an attached updater script. Check the GitHub repository."
         fi
@@ -405,7 +404,7 @@ check_for_update() {
         echo "Do you want to update to version $latest_version? (y/n): "
         read -r answer
         if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-            run_updater "$updater_url"
+            run_updater "$updater_url" "$latest_version"
         else
             echo "Update cancelled."
         fi
@@ -416,6 +415,7 @@ check_for_update() {
 
 run_updater() {
     local updater_url="$1"
+    local latest_version="$2"
     local temp_file
     temp_file=$(mktemp)
 
@@ -430,7 +430,7 @@ run_updater() {
     fi
 
     chmod +x "$temp_file"
-    "$temp_file" "$SCRIPT_PATH" "$VERSION" "$GITHUB_REPO" "$ALLOW_PRERELEASES"
+    "$temp_file" "$SCRIPT_PATH" "$VERSION" "$GITHUB_REPO" "$ALLOW_PRERELEASES" "$latest_version"
     exit_code=$?
 
     [ -f "$temp_file" ] && rm "$temp_file"
